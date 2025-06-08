@@ -1,0 +1,71 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+        container_name: laravel-app
+        working_dir: /var/www/html
+        volumes:
+            - .:/var/www/html
+        depends_on:
+            - mysql
+            - redis
+        command: supervisord -c /etc/supervisor/supervisord.conf
+        networks:
+            - laravel
+
+    nginx:
+        image: nginx:alpine
+        container_name: nginx
+        ports:
+            - "8080:80"
+        volumes:
+            - .:/var/www/html
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - app
+        networks:
+            - laravel
+
+    mysql:
+        image: mysql:8.3
+        container_name: mysql
+        environment:
+            MYSQL_DATABASE: laravel
+            MYSQL_USER: user
+            MYSQL_PASSWORD: super-password
+            MYSQL_ROOT_PASSWORD: super-password
+        volumes:
+            - mysql_data:/var/lib/mysql
+        networks:
+            - laravel
+
+    redis:
+        image: redis:alpine
+        container_name: redis
+        ports:
+            - "6379:6379"
+        networks:
+            - laravel
+
+    reverb:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+        container_name: reverb
+        working_dir: /var/www/html
+        volumes:
+            - .:/var/www/html
+        command: php artisan reverb:start
+        ports:
+            - "6001:6001"
+        depends_on:
+            - redis
+        networks:
+            - laravel
+
+networks:
+    laravel:
+
+volumes:
+    mysql_data:

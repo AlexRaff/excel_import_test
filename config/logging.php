@@ -118,6 +118,12 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'import' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/import.log'),
+            'level' => 'debug',
+        ],
+
         'null' => [
             'driver' => 'monolog',
             'handler' => NullHandler::class,

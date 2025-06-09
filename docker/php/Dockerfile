@@ -10,6 +10,11 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# 🔧 Supervisor config
+RUN mkdir -p /var/log/supervisor
 COPY ./docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY ./docker/php/php.ini /usr/local/etc/php/php.ini
 
 WORKDIR /var/www/html
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

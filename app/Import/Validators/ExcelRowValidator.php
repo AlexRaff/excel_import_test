@@ -4,45 +4,46 @@ namespace App\Import\Validators;
 
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * Валидатор одной строки Excel (в формате [id, name, date]).
+ */
 class ExcelRowValidator
 {
-    protected array $data;
-    protected int $line;
-    protected $validator;
-
-    public function __construct(array $data, int $line)
+    /**
+     * Основной метод: валидирует и возвращает ValidationResult.
+     *
+     * @param array<int,mixed> $row Массив ячеек: [0 => id, 1 => name, 2 => dateStr]
+     * @param int $line Номер строки из файла (для отчёта об ошибках)
+     * @return ValidationResult
+     */
+    public static function validate(array $row, int $line): ValidationResult
     {
-        $this->data = $data;
-        $this->line = $line;
-        $this->validator = $this->makeValidator();
+        // Маппим под Laravel Validator
+        $data = [
+            'id' => $row[0] ?? null,
+            'name' => $row[1] ?? null,
+            'date' => $row[2] ?? null,
+        ];
+
+        $validator = Validator::make($data, static::rules());
+
+        return new ValidationResult(
+            $line,
+            $validator->errors()->all()
+        );
     }
 
-    protected function makeValidator()
+    /**
+     * Правила валидации полей.
+     *
+     * @return array<string,string|array>
+     */
+    protected static function rules(): array
     {
-        return Validator::make([
-            'id' => $this->data[0] ?? null,
-            'name' => $this->data[1] ?? null,
-            'date' => $this->data[2] ?? null,
-        ], [
-            'id' => 'required|integer',
-            'name' => 'required|string',
-            'date' => 'required|date_format:d.m.Y',
-        ]);
-    }
-
-    public function fails(): bool
-    {
-        return $this->validator->fails();
-    }
-
-    public function errorMessage(): string
-    {
-        $errors = $this->validator->errors()->all();
-        return "{$this->line} - " . implode(', ', $errors);
-    }
-
-    public function errors(): array
-    {
-        return $this->validator->errors()->all();
+        return [
+            'id' => ['required', 'integer'],
+            'name' => ['required', 'string'],
+            'date' => ['required', 'date_format:d.m.Y'],
+        ];
     }
 }

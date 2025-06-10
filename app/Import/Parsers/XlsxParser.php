@@ -12,36 +12,41 @@ use Box\Spout\Reader\XLSX\Reader;
 class XlsxParser extends AbstractExcelParser implements ParserInterface
 {
     /**
-     * Парсит XLSX-файл построчно и вызывает callback на каждую строку (кроме заголовка).
+     * Парсит XLSX-файл построчно, пропускает заголовок и пустые строки.
+     * Возвращает генератор с ключом — индексом строки (1-based) и значением — массивом ячеек.
      *
-     * @param callable $callback Функция вида function (int $rowIndex, array $cells)
+     * @param int|null $limit Ограничение по количеству возвращаемых строк (без заголовка), если нужно.
+     * @return \Generator<int, array>
      */
-    public function parse(callable $callback): void
+    public function parse(int $limit = null): \Generator
     {
-        /** @var Reader $reader */
         $reader = ReaderEntityFactory::createXLSXReader();
         $reader->open($this->filePath);
 
+        $validRowNumber = 0;
         foreach ($reader->getSheetIterator() as $sheet) {
-            $rowIndex = 0;
             foreach ($sheet->getRowIterator() as $row) {
-                $rowIndex++; // 1-based индекс строки
-
-                if ($rowIndex === 1) {
-                    continue; // Пропустить заголовок
-                }
-
                 $cells = $row->toArray();
 
-                // Пропустить полностью пустые строки
+                // Пропускаем полностью пустые
                 if (empty(array_filter($cells, fn($cell) => trim((string) $cell) !== ''))) {
                     continue;
                 }
 
-                $callback($rowIndex, $cells);
+                // Пропускаем заголовок (первую непустую строку)
+                if ($validRowNumber === 0) {
+                    $validRowNumber++;
+                    continue;
+                }
+
+                $validRowNumber++;
+                yield $validRowNumber => $cells;
+
+                if ($limit !== null && $validRowNumber >= $limit) {
+                    break 2;
+                }
             }
         }
-
         $reader->close();
     }
 }

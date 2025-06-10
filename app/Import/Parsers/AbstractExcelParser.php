@@ -13,5 +13,5 @@ abstract class AbstractExcelParser implements ParserInterface
         $this->filePath = $filePath;
     }
 
-    abstract public function parse(callable $callback): void;
+    abstract public function parse(int $limit): \Generator;
 }

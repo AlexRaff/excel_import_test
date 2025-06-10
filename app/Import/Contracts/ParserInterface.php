@@ -4,5 +4,5 @@ namespace App\Import\Contracts;
 
 interface ParserInterface
 {
-    public function parse(callable $callback): void;
+    public function parse(int $limit): \Generator;
 }

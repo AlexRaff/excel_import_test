@@ -6,9 +6,11 @@ namespace App\Import\Jobs;
 use App\Import\Events\ImportItemProcessed;
 use App\Models\ImportItem;
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class ImportChunkJob implements ShouldQueue
 {
@@ -33,34 +35,34 @@ class ImportChunkJob implements ShouldQueue
         $toInsert = [];
 
         foreach ($this->chunk as $row) {
-            $id = $row['data']['id'] ?? null;
-            if ($id === null) {
-                // Можно логировать ошибки, если файл указан
-                if ($this->errorFilePath) {
-                    file_put_contents($this->errorFilePath, "Line {$row['line']}: missing id\n", FILE_APPEND);
+            $date = null;
+
+            if (!empty($row['data']['date'])) {
+                try {
+                    // Преобразуем из "дд.мм.гггг" в "гггг-мм-дд"
+                    $date = \DateTime::createFromFormat('d.m.Y', $row['data']['date'])->format('Y-m-d');
+                } catch (\Exception $e) {
+                    // Логируем ошибку, но продолжаем обработку
+                    Log::error('Ошибка преобразования даты', [
+                        'original_date' => $row['data']['date'],
+                        'error' => $e->getMessage()
+                    ]);
                 }
-                continue;
             }
 
-            if (in_array($id, $existingIds)) {
-                if ($this->errorFilePath) {
-                    file_put_contents($this->errorFilePath, json_encode($row) . PHP_EOL, FILE_APPEND);
-                }
-            } else {
-                $toInsert[] = [
-                    'id' => $id,
-                    'name' => $row['data']['name'] ?? null,
-                    'date' => $row['data']['date'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
+            $toInsert[] = [
+                'id' => $row['data']['id'],
+                'name' => $row['data']['name'] ?? null,
+                'date' => $date,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
 
-                event(new ImportItemProcessed(
-                    $id,
-                    $row['data']['name'],
-                    $row['data']['date']
-                ));
-            }
+            event(new ImportItemProcessed(
+                $row['data']['id'],
+                $row['data']['name'],
+                $row['data']['date']
+            ));
         }
 
         if ($toInsert) {

@@ -23,24 +23,45 @@ class ImportRowDto implements JsonSerializable
     {
         $this->id = $id !== null ? (int)$id : null;
         $this->name = $name;
+        $this->date = $this->parseDate($dateStr);
+    }
 
-        if ($dateStr) {
-            try {
-                $dt = DateTimeImmutable::createFromFormat('d.m.Y', $dateStr);
-                if ($dt === false) {
-                    throw new Exception("Invalid date format: {$dateStr}");
-                }
-                $this->date = $dt;
-            } catch (Exception $e) {
-                Log::error('Ошибка преобразования даты в DTO', [
-                    'dateStr' => $dateStr,
-                    'exception' => $e->getMessage(),
-                ]);
-                $this->date = null;
-            }
-        } else {
-            $this->date = null;
+    /**
+     * Пытается распарсить строку даты с поддержкой различных форматов.
+     *
+     * @param string|null $dateStr
+     * @return DateTimeInterface|null
+     */
+    private function parseDate(?string $dateStr): ?DateTimeInterface
+    {
+        if (!$dateStr) {
+            return null;
         }
+
+        $formats = ['d.m.Y', 'Y-m-d', 'd/m/Y', 'm-d-Y', 'd-m-Y', 'Y/m/d'];
+
+        foreach ($formats as $format) {
+            $dt = DateTimeImmutable::createFromFormat($format, $dateStr);
+            if ($dt !== false) {
+                return $dt;
+            }
+        }
+
+        // fallback на strtotime
+        try {
+            $timestamp = strtotime($dateStr);
+            if ($timestamp !== false) {
+                return (new DateTimeImmutable())->setTimestamp($timestamp);
+            }
+        } catch (Exception $e) {
+            // Игнорируем, запишем в лог ниже
+        }
+
+        Log::error('Ошибка преобразования даты в DTO', [
+            'dateStr' => $dateStr,
+        ]);
+
+        return null;
     }
 
     /**

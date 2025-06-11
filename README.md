@@ -14,8 +14,8 @@ cd excel_import_test
 # 3. Копируем файл окружения
 cp .env.prod .env
 
-# 4. Запускаем Docker-контейнеры (включает backend, MySQL, REDIS и зависимости)
-make up
+# 4. Устанавливаем зависимости PHP
+composer install
 
 # 5. Устанавливаем зависимости Node.js
 npm install
@@ -23,8 +23,8 @@ npm install
 # 6. Собираем фронтенд
 npm run build
 
-# 7. Устанавливаем зависимости PHP
-composer install
+# 7. Запускаем Docker-контейнеры (включает backend, MySQL, REDIS и зависимости)
+make up
 
 # 8. Применяем миграции
 docker compose exec app php artisan migrate

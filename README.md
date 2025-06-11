@@ -20,16 +20,13 @@ make up
 # 5. Устанавливаем зависимости Node.js
 npm install
 
-# 6. Собираем фронтенд
-npm run build
-
-# 7. Устанавливаем зависимости PHP
+# 6. Устанавливаем зависимости PHP
 composer install
 
-# 8. Применяем миграции
+# 7. Применяем миграции
 docker compose exec app php artisan migrate
 
-# 9. Генерируем ключ приложения
+# 8. Генерируем ключ приложения
 docker compose exec app php artisan key:generate
 ```
 

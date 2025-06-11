@@ -31,7 +31,7 @@ docker compose exec app php artisan migrate
 
 # 9. Генерируем ключ приложения
 docker compose exec app php artisan key:generate
-
+```
 
 ## Условие задания
 

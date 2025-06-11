@@ -20,7 +20,7 @@ class ExcelRowValidator
     {
         // Маппим под Laravel Validator
         $data = [
-            'id' => $row[0] ?? null,
+            'id' => isset($row[0]) ? (int)$row[0] : null,
             'name' => $row[1] ?? null,
             'date' => $row[2] ?? null,
         ];
@@ -41,7 +41,7 @@ class ExcelRowValidator
     protected static function rules(): array
     {
         return [
-            'id' => ['required', 'integer'],
+            'id' => ['required', 'integer', 'min:1'],
             'name' => ['required', 'string'],
             'date' => ['required', 'date_format:d.m.Y'],
         ];

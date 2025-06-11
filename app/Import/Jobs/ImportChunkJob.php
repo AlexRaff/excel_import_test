@@ -61,6 +61,11 @@ class ImportChunkJob implements ShouldQueue
             }
 
 
+            if ((int)$row->id < 1) {
+                $this->logError("ID должен быть положительным числом, строка пропущена", $row);
+                continue;
+            }
+
             if (isset($existingIds[$row->id])) {
                 $this->logError("Дубликат ID пропущен: {$row->id}", $row);
                 continue;
@@ -82,7 +87,6 @@ class ImportChunkJob implements ShouldQueue
         ], $toInsert);
 
         event(new ImportItemProcessed($processedItems));
-
 
         if (!empty($toInsert)) {
             try {

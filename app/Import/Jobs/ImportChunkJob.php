@@ -112,7 +112,7 @@ class ImportChunkJob implements ShouldQueue
      */
     protected function logError(string $message, ImportRowDto|array $rowData): void
     {
-        // Если передан DTO — конвертим в массив
+        // Если передан DTO — конвертируем в массив
         if ($rowData instanceof ImportRowDto) {
             $rowData = $rowData->jsonSerialize();
         }

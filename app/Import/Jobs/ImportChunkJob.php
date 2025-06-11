@@ -54,19 +54,18 @@ class ImportChunkJob implements ShouldQueue
         $toInsert = [];
 
         foreach ($this->chunk as $row) {
-            // 1) Отфильтруем строки без ID
+
             if ($row->id === null) {
                 $this->logError("Отсутствует ID, строка пропущена", $row);
                 continue;
             }
 
-            // 2) Отфильтруем дубликаты
+
             if (isset($existingIds[$row->id])) {
                 $this->logError("Дубликат ID пропущен: {$row->id}", $row);
                 continue;
             }
 
-            // 3) Собираем данные для вставки
             $toInsert[] = [
                 'id' => $row->id,
                 'name' => $row->name,
@@ -74,22 +73,23 @@ class ImportChunkJob implements ShouldQueue
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
-
-            // 4) Сразу бросаем событие об успешной обработке строки
-            event(new ImportItemProcessed(
-                $row->id,
-                $row->name,
-                $row->date?->format('d.m.Y') ?? null
-            ));
         }
 
-        // 5) Вставка в базу и обновление прогресса
+        $processedItems = array_map(fn($item) => [
+            'id' => $item['id'],
+            'name' => $item['name'],
+            'date' => $item['date'],
+        ], $toInsert);
+
+        event(new ImportItemProcessed($processedItems));
+
+
         if (!empty($toInsert)) {
             try {
-                ImportItem::insert($toInsert);
+                ImportItem::insertOrIgnore($toInsert);
                 Redis::incrby($this->progressKey, count($toInsert));
             } catch (\Exception $e) {
-                // На случай массового сбоя — логируем каждую запись
+
                 foreach ($toInsert as $item) {
                     $this->logError(
                         "Ошибка вставки в базу: " . $e->getMessage(),

@@ -3,24 +3,23 @@
 namespace App\Import\Events;
 
 use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Broadcasting\InteractsWithSockets;
 
 class ImportItemProcessed implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public int $id;
-    public string $name;
-    public string $date;
+    public array $items;
 
-    public function __construct(int $id, string $name, string $date)
+    /**
+     * @param array $items
+     */
+    public function __construct(array $items)
     {
-        $this->id = $id;
-        $this->name = $name;
-        $this->date = $date;
+        $this->items = $items;
     }
 
     public function broadcastOn(): Channel
@@ -36,10 +35,7 @@ class ImportItemProcessed implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'date' => $this->date,
+            'items' => $this->items,
         ];
     }
 }
-

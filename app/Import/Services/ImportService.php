@@ -4,6 +4,7 @@ namespace App\Import\Services;
 
 use App\Import\Contracts\ParserInterface;
 use App\Import\Dto\ImportRowDto;
+use App\Import\Events\ImportFinished;
 use App\Import\Jobs\ImportChunkJob;
 use App\Import\Validators\ExcelRowValidator;
 use Illuminate\Support\Facades\Redis;
@@ -12,13 +13,18 @@ use Illuminate\Support\Facades\Storage;
 class ImportService
 {
     protected ParserInterface $parser;
-    protected int $chunkSize = 500;
+    protected int $chunkSize = 50;
+
+    /**
+     * Интервал в секундах, через который обновляется прогресс в REDIS
+     */
+    private const REDIS_REFRESH_RATE = 1;
 
     /**
      * @param ParserInterface $parser
      * @param int $chunkSize
      */
-    public function __construct(ParserInterface $parser, int $chunkSize = 500)
+    public function __construct(ParserInterface $parser, int $chunkSize = 50)
     {
         $this->parser = $parser;
         $this->chunkSize = $chunkSize;
@@ -30,6 +36,10 @@ class ImportService
      */
     public function import(string $progressKey): void
     {
+        $start = microtime(true); // старт таймера
+
+        $lastProgressWrite = time();
+
         $chunk = [];
         $line = 0;
         $errors = [];
@@ -63,8 +73,14 @@ class ImportService
                 $chunk = [];
             }
 
-            Redis::set($progressKey, $line);
+            if (time() - $lastProgressWrite >= self::REDIS_REFRESH_RATE) {
+                Redis::set($progressKey, $line);
+                $lastProgressWrite = time();
+            }
         }
+
+        // Финальная запись прогресса после цикла
+        Redis::set($progressKey, $line);
 
         // Отправляем последний чанк, если есть
         if (!empty($chunk)) {
@@ -73,6 +89,11 @@ class ImportService
 
         // Записываем все ошибки в result.txt
         $this->writeErrorsToFile($errors);
+
+        $end = microtime(true); // конец таймера
+        $duration = round($end - $start, 2);
+
+        event(new ImportFinished($duration));
     }
 
     /**

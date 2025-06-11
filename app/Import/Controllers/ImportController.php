@@ -3,12 +3,10 @@
 namespace App\Import\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Import\Services\ImportService;
-use App\Import\Parsers\XlsxParser;
+use App\Import\Jobs\ImportStartJob;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
 
 class ImportController extends Controller
 {
@@ -24,13 +22,11 @@ class ImportController extends Controller
         ]);
 
         $path = $request->file('file')->store('imports');
-
-        $parser = new XlsxParser(Storage::path($path));
+        $absolutePath = Storage::path($path);
 
         $progressKey = 'import_progress:' . Str::uuid();
 
-        $importService = new ImportService($parser);
-        $importService->import($progressKey);
+        ImportStartJob::dispatch($absolutePath, $progressKey);
 
         return response()->json([
             'status' => 'Импорт запущен.',

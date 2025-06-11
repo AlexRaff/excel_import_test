@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ImportItem extends Model
 {
-    public $incrementing = false; // id из Excel, не автоинкремент
+    use HasFactory;
+
+    public $incrementing = false;
     protected $keyType = 'int';
+    protected $primaryKey = 'id';
 
     protected $fillable = [
         'id',

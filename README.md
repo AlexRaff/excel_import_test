@@ -36,7 +36,7 @@ docker compose exec app php artisan key:generate
 http://localhost:8080/import/
 
 Прмиерная ссылка на API endPoint
-http://localhost:8080//api/imported-items?date=1994-04-11
+http://localhost:8080/api/imported-items?date=1994-04-11
 
 Тесты
 docker compose exec app php artisan test

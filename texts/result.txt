@@ -1,0 +1,6 @@
+10024 - The date field must match the format d.m.Y.
+23636 - The id field must be at least 1.
+39109 - The date field must match the format d.m.Y.
+46161 - The date field must match the format d.m.Y.
+49317 - The date field must match the format d.m.Y.
+59986 - The date field must match the format d.m.Y.
